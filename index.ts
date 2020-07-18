@@ -20,12 +20,23 @@ const GUZMER_PLAYERS = [
   '76561198025465711', // Phil
 ];
 
+const LOW_SKILL_PLAYERS = [
+  '76561198041643113', // Charlie M
+  '76561198155085307', // Katie
+  '76561198150706831', // Hutno
+  '76561198382666964', // Josh
+  '76561198347325486', // Scoop Life
+  '76561198025465711', // Phil
+];
+
 const MIN_GUZMER_PLAYERS = 4;
 
 const MAP_FILTER = ['de_mirage'];
 
+const SCRIMMAGE_MAPS = ['de_chlorine', 'de_breach', 'de_ruby', 'de_studio', 'de_seaside'];
+
 // const DEMOS_AFTER = new Date('2020-06-10T00:00:00-05:00');
-const DEMOS_AFTER = new Date('2020-06-27T00:00:00-05:00');
+const DEMOS_AFTER = new Date('1900-06-27T00:00:00-05:00');
 
 const outData = {
   statsForMap: MAP_FILTER,
@@ -57,7 +68,22 @@ const isTeamOnSide = (side: Side, teamName: string, round: Round): boolean => {
 };
 
 const isScrimmage = (demo: DemoJson): boolean => {
-  return demo.id.includes('scrimmagemap');
+  const date = new Date(demo.date);
+  if (demo.id.includes('scrimmagemap')) return true;
+  if (SCRIMMAGE_MAPS.includes(demo.map_name)) return true;
+  if (
+    demo.map_name === 'de_cache' &&
+    date > new Date('2019-10-02T00:00:00Z') &&
+    date < new Date('2019-11-18T00:00:00Z')
+  )
+    return true;
+  if (
+    demo.map_name === 'de_anubis' &&
+    date > new Date('2020-03-31T00:00:00Z') &&
+    date < new Date('2020-04-10T00:00:00Z')
+  )
+    return true;
+  return false;
 };
 
 const main = (): void => {
@@ -74,11 +100,18 @@ const main = (): void => {
     if (guzmerPlayers.length < MIN_GUZMER_PLAYERS) return;
     // Filter on a map
     if (!MAP_FILTER.includes(demo.map_name)) return;
+    // Only games with bad players
+    // if (!guzmerPlayers.filter(value => LOW_SKILL_PLAYERS.includes(value.steamid)).length) return;
+
+    if (isScrimmage(demo)) {
+      outData.scrimmageMaps += 1;
+    }
+    // else {
+    //   return;
+    // }
 
     // Now we are a clan match
     outData.mapsParsed += 1;
-
-    if (isScrimmage(demo)) outData.scrimmageMaps += 1;
 
     // Find which team Guzmer is
     const guzmerTeamName = guzmerPlayers[0].team_name;
