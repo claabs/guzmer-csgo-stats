@@ -58,6 +58,10 @@ const outData = {
   tSideStart: 0,
   ctSideStart: 0,
   tSideStartRate: 0,
+  matchesWonTSideStart: 0,
+  matchesWonCTSideStart: 0,
+  matchWonTSideStartRate: 0,
+  matchWonCTSideStartRate: 0,
 };
 
 const isTeamOnSide = (side: Side, teamName: string, round: Round): boolean => {
@@ -131,13 +135,15 @@ const main = (): void => {
     outData.totalCTSideRounds += ctSideRounds.length;
     outData.totalCTSideRoundsWon += ctSideRoundsWon.length;
 
-    if (demo.team_winner && demo.team_winner.team_name === guzmerTeamName) outData.mapsWon += 1;
+    if (demo.team_winner?.team_name === guzmerTeamName) outData.mapsWon += 1;
 
     if (demo.team_t.team_name === guzmerTeamName) {
       outData.tSideStart += 1;
+      if (demo.team_winner?.team_name === guzmerTeamName) outData.matchesWonTSideStart += 1;
     } else {
-      // console.log('Started CT on:', demo.date);
       outData.ctSideStart += 1;
+      if (demo.team_winner?.team_name === guzmerTeamName) outData.matchesWonCTSideStart += 1;
+      // console.log('Started CT on:', demo.date);
     }
   });
   outData.mapWinRate = outData.mapsWon / outData.mapsParsed;
@@ -145,6 +151,8 @@ const main = (): void => {
   outData.tSideWinRate = outData.totalTSideRoundsWon / outData.totalTSideRounds;
   outData.ctSideWinRate = outData.totalCTSideRoundsWon / outData.totalCTSideRounds;
   outData.tSideStartRate = outData.tSideStart / outData.mapsParsed;
+  outData.matchWonTSideStartRate = outData.matchesWonTSideStart / outData.tSideStart;
+  outData.matchWonCTSideStartRate = outData.matchesWonCTSideStart / outData.ctSideStart;
   console.log(JSON.stringify(outData, null, 2));
 };
 
