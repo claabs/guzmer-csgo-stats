@@ -18,6 +18,7 @@ const GUZMER_PLAYERS = [
   '76561198382666964', // Josh
   '76561198347325486', // Scoop Life
   '76561198025465711', // Phil
+  '76561198020954283', // John Madden
 ];
 
 const LOW_SKILL_PLAYERS = [
@@ -25,18 +26,19 @@ const LOW_SKILL_PLAYERS = [
   '76561198155085307', // Katie
   '76561198150706831', // Hutno
   '76561198382666964', // Josh
-  '76561198347325486', // Scoop Life
   '76561198025465711', // Phil
 ];
 
-const MIN_GUZMER_PLAYERS = 4;
+const MIN_GUZMER_PLAYERS = 5;
 
 const MAP_FILTER = ['de_mirage'];
 
 const SCRIMMAGE_MAPS = ['de_chlorine', 'de_breach', 'de_ruby', 'de_studio', 'de_seaside'];
 
-// const DEMOS_AFTER = new Date('2020-06-10T00:00:00-05:00');
+// const DEMOS_AFTER = new Date('2020-11-01T00:00:00-05:00');
 const DEMOS_AFTER = new Date('1900-06-27T00:00:00-05:00');
+
+const DEMOS_PATH = 'E:/CSGO Demos/json';
 
 const outData = {
   statsForMap: MAP_FILTER,
@@ -91,10 +93,10 @@ const isScrimmage = (demo: DemoJson): boolean => {
 };
 
 const main = (): void => {
-  const dataFiles = fs.readdirSync('../').filter(file => file.endsWith('.json'));
+  const dataFiles = fs.readdirSync(DEMOS_PATH).filter(file => file.endsWith('.json'));
 
   dataFiles.forEach(dataFile => {
-    const demo: DemoJson = JSON.parse(fs.readFileSync(path.join('..', dataFile), 'utf8'));
+    const demo: DemoJson = JSON.parse(fs.readFileSync(path.join(DEMOS_PATH, dataFile), 'utf8'));
     const { players, rounds } = demo;
 
     const guzmerPlayers = players.filter(player => GUZMER_PLAYERS.includes(player.steamid));
@@ -106,9 +108,11 @@ const main = (): void => {
     if (!MAP_FILTER.includes(demo.map_name)) return;
     // Only games with bad players
     // if (!guzmerPlayers.filter(value => LOW_SKILL_PLAYERS.includes(value.steamid)).length) return;
+    // if (!guzmerPlayers.find(player => player.steamid === '76561198025465711')) return; // Has Phil
 
     if (isScrimmage(demo)) {
-      outData.scrimmageMaps += 1;
+      return;
+      // outData.scrimmageMaps += 1;
     }
     // else {
     //   return;
@@ -135,7 +139,12 @@ const main = (): void => {
     outData.totalCTSideRounds += ctSideRounds.length;
     outData.totalCTSideRoundsWon += ctSideRoundsWon.length;
 
-    if (demo.team_winner?.team_name === guzmerTeamName) outData.mapsWon += 1;
+    if (demo.team_winner?.team_name === guzmerTeamName) {
+      outData.mapsWon += 1;
+      console.log('WIN');
+    } else {
+      console.log('LOSE/TIE');
+    }
 
     if (demo.team_t.team_name === guzmerTeamName) {
       outData.tSideStart += 1;
