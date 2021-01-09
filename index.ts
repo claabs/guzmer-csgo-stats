@@ -25,7 +25,6 @@ const LOW_SKILL_PLAYERS = [
   '76561198041643113', // Charlie M
   '76561198155085307', // Katie
   '76561198150706831', // Hutno
-  '76561198382666964', // Josh
   '76561198025465711', // Phil
 ];
 
@@ -93,7 +92,10 @@ const isScrimmage = (demo: DemoJson): boolean => {
 };
 
 const main = (): void => {
-  const dataFiles = fs.readdirSync(DEMOS_PATH).filter(file => file.endsWith('.json'));
+  const dataFiles = fs
+    .readdirSync(DEMOS_PATH)
+    .filter(file => file.endsWith('.json'))
+    .sort();
 
   dataFiles.forEach(dataFile => {
     const demo: DemoJson = JSON.parse(fs.readFileSync(path.join(DEMOS_PATH, dataFile), 'utf8'));
@@ -138,6 +140,8 @@ const main = (): void => {
     outData.totalTSideRoundsWon += tSideRoundsWon.length;
     outData.totalCTSideRounds += ctSideRounds.length;
     outData.totalCTSideRoundsWon += ctSideRoundsWon.length;
+
+    // console.log(demo.date);
 
     if (demo.team_winner?.team_name === guzmerTeamName) {
       outData.mapsWon += 1;
