@@ -28,16 +28,26 @@ const LOW_SKILL_PLAYERS = [
   '76561198025465711', // Phil
 ];
 
-const MIN_GUZMER_PLAYERS = 5;
+const MIN_GUZMER_PLAYERS = 4;
 
 const MAP_FILTER = ['de_mirage'];
 
-const SCRIMMAGE_MAPS = ['de_chlorine', 'de_breach', 'de_ruby', 'de_studio', 'de_seaside'];
+const SCRIMMAGE_MAPS = [
+  'de_chlorine',
+  'de_breach',
+  'de_ruby',
+  'de_studio',
+  'de_seaside',
+  'de_engage',
+  'cs_apollo',
+  'de_grind',
+  'de_mocha',
+];
 
-// const DEMOS_AFTER = new Date('2020-11-01T00:00:00-05:00');
-const DEMOS_AFTER = new Date('1900-06-27T00:00:00-05:00');
+const DEMOS_AFTER = new Date('2021-03-01T00:00:00-05:00');
+// const DEMOS_AFTER = new Date('1900-06-27T00:00:00-05:00');
 
-const DEMOS_PATH = 'E:/CSGO Demos/json';
+const DEMOS_PATH = '/mnt/e/CSGO Demos/json';
 
 const outData = {
   statsForMap: MAP_FILTER,
@@ -52,6 +62,11 @@ const outData = {
   totalTSideRoundsWon: 0,
   totalCTSideRounds: 0,
   totalCTSideRoundsWon: 0,
+  totalRankAdvantage: 0,
+  totalMatchesVsBetterTeam: 0,
+  totalMatchesVsWorseTeam: 0,
+  totalWinsVsBetterTeam: 0,
+  totalWinsVsWorseTeam: 0,
   mapWinRate: 0,
   pistolRoundWinRate: 0,
   tSideWinRate: 0,
@@ -59,6 +74,9 @@ const outData = {
   tSideStart: 0,
   ctSideStart: 0,
   tSideStartRate: 0,
+  averageRankAdvantage: 0,
+  winrateVsBetterTeam: 0,
+  winrateVsWorseTeam: 0,
   matchesWonTSideStart: 0,
   matchesWonCTSideStart: 0,
   matchWonTSideStartRate: 0,
@@ -88,6 +106,7 @@ const isScrimmage = (demo: DemoJson): boolean => {
     date < new Date('2020-04-10T00:00:00Z')
   )
     return true;
+  if (demo.map_name === 'de_ancient' && date < new Date('2021-05-04T00:00:00Z')) return true;
   return false;
 };
 
@@ -134,6 +153,16 @@ const main = (): void => {
     const tSideRoundsWon = tSideRounds.filter(round => round.winner_name === guzmerTeamName);
     const ctSideRoundsWon = ctSideRounds.filter(round => round.winner_name === guzmerTeamName);
 
+    const guzmerTeamPlayers = players.filter(player => player.team_name === guzmerTeamName);
+    const enemyTeamPlayers = players.filter(player => player.team_name !== guzmerTeamName);
+
+    const guzmerTotalRank = guzmerTeamPlayers.reduce((prev, curr) => prev + curr.rank_old, 0);
+    const enemyTotalRank = enemyTeamPlayers.reduce((prev, curr) => prev + curr.rank_old, 0);
+    const rankAdvantage = guzmerTotalRank - enemyTotalRank;
+    outData.totalRankAdvantage += rankAdvantage;
+    if (rankAdvantage > 0) outData.totalMatchesVsWorseTeam += 1;
+    if (rankAdvantage < 0) outData.totalMatchesVsBetterTeam += 1;
+
     outData.totalPistolRounds += pistolRounds.length;
     outData.totalPistolRoundsWon += pistolRoundsWon.length;
     outData.totalTSideRounds += tSideRounds.length;
@@ -145,9 +174,11 @@ const main = (): void => {
 
     if (demo.team_winner?.team_name === guzmerTeamName) {
       outData.mapsWon += 1;
-      console.log('WIN');
+      if (rankAdvantage > 0) outData.totalWinsVsWorseTeam += 1;
+      if (rankAdvantage < 0) outData.totalWinsVsBetterTeam += 1;
+      // console.log('WIN');
     } else {
-      console.log('LOSE/TIE');
+      // console.log('LOSE/TIE');
     }
 
     if (demo.team_t.team_name === guzmerTeamName) {
@@ -161,6 +192,9 @@ const main = (): void => {
   });
   outData.mapWinRate = outData.mapsWon / outData.mapsParsed;
   outData.pistolRoundWinRate = outData.totalPistolRoundsWon / outData.totalPistolRounds;
+  outData.averageRankAdvantage = outData.totalRankAdvantage / outData.mapsParsed;
+  outData.winrateVsBetterTeam = outData.totalWinsVsBetterTeam / outData.totalMatchesVsBetterTeam;
+  outData.winrateVsWorseTeam = outData.totalWinsVsWorseTeam / outData.totalMatchesVsWorseTeam;
   outData.tSideWinRate = outData.totalTSideRoundsWon / outData.totalTSideRounds;
   outData.ctSideWinRate = outData.totalCTSideRoundsWon / outData.totalCTSideRounds;
   outData.tSideStartRate = outData.tSideStart / outData.mapsParsed;
