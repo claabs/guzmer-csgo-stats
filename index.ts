@@ -30,7 +30,7 @@ const LOW_SKILL_PLAYERS = [
 
 const MIN_GUZMER_PLAYERS = 4;
 
-const MAP_FILTER = ['de_mirage'];
+const MAP_FILTER = ['de_mirage', 'de_inferno'];
 
 const SCRIMMAGE_MAPS = [
   'de_chlorine',
@@ -44,10 +44,16 @@ const SCRIMMAGE_MAPS = [
   'de_mocha',
 ];
 
-const DEMOS_AFTER = new Date('2021-03-01T00:00:00-05:00');
+const DEMOS_AFTER = new Date('2021-06-03T00:00:00-05:00');
 // const DEMOS_AFTER = new Date('1900-06-27T00:00:00-05:00');
 
 const DEMOS_PATH = '/mnt/e/CSGO Demos/json';
+
+const baseTimeGroupData = {
+  wins: 0,
+  losses: 0,
+  winrate: 0,
+};
 
 const outData = {
   statsForMap: MAP_FILTER,
@@ -81,6 +87,32 @@ const outData = {
   matchesWonCTSideStart: 0,
   matchWonTSideStartRate: 0,
   matchWonCTSideStartRate: 0,
+  timeGroups: {
+    0: JSON.parse(JSON.stringify(baseTimeGroupData)),
+    1: JSON.parse(JSON.stringify(baseTimeGroupData)),
+    2: JSON.parse(JSON.stringify(baseTimeGroupData)),
+    3: JSON.parse(JSON.stringify(baseTimeGroupData)),
+    4: JSON.parse(JSON.stringify(baseTimeGroupData)),
+    5: JSON.parse(JSON.stringify(baseTimeGroupData)),
+    6: JSON.parse(JSON.stringify(baseTimeGroupData)),
+    7: JSON.parse(JSON.stringify(baseTimeGroupData)),
+    8: JSON.parse(JSON.stringify(baseTimeGroupData)),
+    9: JSON.parse(JSON.stringify(baseTimeGroupData)),
+    10: JSON.parse(JSON.stringify(baseTimeGroupData)),
+    11: JSON.parse(JSON.stringify(baseTimeGroupData)),
+    12: JSON.parse(JSON.stringify(baseTimeGroupData)),
+    13: JSON.parse(JSON.stringify(baseTimeGroupData)),
+    14: JSON.parse(JSON.stringify(baseTimeGroupData)),
+    15: JSON.parse(JSON.stringify(baseTimeGroupData)),
+    16: JSON.parse(JSON.stringify(baseTimeGroupData)),
+    17: JSON.parse(JSON.stringify(baseTimeGroupData)),
+    18: JSON.parse(JSON.stringify(baseTimeGroupData)),
+    19: JSON.parse(JSON.stringify(baseTimeGroupData)),
+    20: JSON.parse(JSON.stringify(baseTimeGroupData)),
+    21: JSON.parse(JSON.stringify(baseTimeGroupData)),
+    22: JSON.parse(JSON.stringify(baseTimeGroupData)),
+    23: JSON.parse(JSON.stringify(baseTimeGroupData)),
+  } as Record<number, typeof baseTimeGroupData>,
 };
 
 const isTeamOnSide = (side: Side, teamName: string, round: Round): boolean => {
@@ -126,10 +158,11 @@ const main = (): void => {
     // Must have enough Guzmer players
     if (guzmerPlayers.length < MIN_GUZMER_PLAYERS) return;
     // Filter on a map
-    if (!MAP_FILTER.includes(demo.map_name)) return;
+    // if (!MAP_FILTER.includes(demo.map_name)) return;
     // Only games with bad players
     // if (!guzmerPlayers.filter(value => LOW_SKILL_PLAYERS.includes(value.steamid)).length) return;
     // if (!guzmerPlayers.find(player => player.steamid === '76561198025465711')) return; // Has Phil
+    // if (guzmerPlayers.find(player => player.steamid === '76561198382666964')) return; // Has Baguette
 
     if (isScrimmage(demo)) {
       return;
@@ -174,10 +207,14 @@ const main = (): void => {
 
     if (demo.team_winner?.team_name === guzmerTeamName) {
       outData.mapsWon += 1;
+      const hour = new Date(demo.date).getHours();
+      outData.timeGroups[hour].wins += 1;
       if (rankAdvantage > 0) outData.totalWinsVsWorseTeam += 1;
       if (rankAdvantage < 0) outData.totalWinsVsBetterTeam += 1;
       // console.log('WIN');
     } else {
+      const hour = new Date(demo.date).getHours();
+      outData.timeGroups[hour].losses += 1;
       // console.log('LOSE/TIE');
     }
 
@@ -200,6 +237,11 @@ const main = (): void => {
   outData.tSideStartRate = outData.tSideStart / outData.mapsParsed;
   outData.matchWonTSideStartRate = outData.matchesWonTSideStart / outData.tSideStart;
   outData.matchWonCTSideStartRate = outData.matchesWonCTSideStart / outData.ctSideStart;
+  // eslint-disable-next-line no-restricted-syntax
+  for (let i = 0; i < 24; i += 1) {
+    outData.timeGroups[i].winrate =
+      outData.timeGroups[i].wins / (outData.timeGroups[i].wins + outData.timeGroups[i].losses);
+  }
   console.log(JSON.stringify(outData, null, 2));
 };
 
