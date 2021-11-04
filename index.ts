@@ -1,7 +1,9 @@
 /* eslint-disable no-console */
 /* eslint-disable import/extensions */
 import * as fs from 'fs';
+import { outputJsonSync } from 'fs-extra';
 import * as path from 'path';
+import * as stats from 'fast-stats';
 import { DemoJson, RoundType, Side, Round } from './json-types';
 
 const GUZMER_PLAYERS = [
@@ -44,7 +46,7 @@ const SCRIMMAGE_MAPS = [
   'de_mocha',
 ];
 
-const DEMOS_AFTER = new Date('2021-06-03T00:00:00-05:00');
+const DEMOS_AFTER = new Date('2020-01-01T00:00:00-05:00');
 // const DEMOS_AFTER = new Date('1900-06-27T00:00:00-05:00');
 
 const DEMOS_PATH = '/mnt/e/CSGO Demos/json';
@@ -54,6 +56,23 @@ const baseTimeGroupData = {
   losses: 0,
   winrate: 0,
 };
+
+const timeGroups: Record<number, typeof baseTimeGroupData> = Object.fromEntries(
+  Array.from(Array(24).keys()).map(key => [key, baseTimeGroupData])
+);
+
+const playerStats = Object.fromEntries(
+  GUZMER_PLAYERS.map(id => [
+    id,
+    {
+      ratings: new stats.Stats(),
+      name: '',
+      stddev: -1,
+      median: -1,
+      count: -1,
+    },
+  ])
+);
 
 const outData = {
   statsForMap: MAP_FILTER,
@@ -87,32 +106,8 @@ const outData = {
   matchesWonCTSideStart: 0,
   matchWonTSideStartRate: 0,
   matchWonCTSideStartRate: 0,
-  timeGroups: {
-    0: JSON.parse(JSON.stringify(baseTimeGroupData)),
-    1: JSON.parse(JSON.stringify(baseTimeGroupData)),
-    2: JSON.parse(JSON.stringify(baseTimeGroupData)),
-    3: JSON.parse(JSON.stringify(baseTimeGroupData)),
-    4: JSON.parse(JSON.stringify(baseTimeGroupData)),
-    5: JSON.parse(JSON.stringify(baseTimeGroupData)),
-    6: JSON.parse(JSON.stringify(baseTimeGroupData)),
-    7: JSON.parse(JSON.stringify(baseTimeGroupData)),
-    8: JSON.parse(JSON.stringify(baseTimeGroupData)),
-    9: JSON.parse(JSON.stringify(baseTimeGroupData)),
-    10: JSON.parse(JSON.stringify(baseTimeGroupData)),
-    11: JSON.parse(JSON.stringify(baseTimeGroupData)),
-    12: JSON.parse(JSON.stringify(baseTimeGroupData)),
-    13: JSON.parse(JSON.stringify(baseTimeGroupData)),
-    14: JSON.parse(JSON.stringify(baseTimeGroupData)),
-    15: JSON.parse(JSON.stringify(baseTimeGroupData)),
-    16: JSON.parse(JSON.stringify(baseTimeGroupData)),
-    17: JSON.parse(JSON.stringify(baseTimeGroupData)),
-    18: JSON.parse(JSON.stringify(baseTimeGroupData)),
-    19: JSON.parse(JSON.stringify(baseTimeGroupData)),
-    20: JSON.parse(JSON.stringify(baseTimeGroupData)),
-    21: JSON.parse(JSON.stringify(baseTimeGroupData)),
-    22: JSON.parse(JSON.stringify(baseTimeGroupData)),
-    23: JSON.parse(JSON.stringify(baseTimeGroupData)),
-  } as Record<number, typeof baseTimeGroupData>,
+  timeGroups,
+  playerStats,
 };
 
 const isTeamOnSide = (side: Side, teamName: string, round: Round): boolean => {
@@ -158,7 +153,7 @@ const main = (): void => {
     // Must have enough Guzmer players
     if (guzmerPlayers.length < MIN_GUZMER_PLAYERS) return;
     // Filter on a map
-    // if (!MAP_FILTER.includes(demo.map_name)) return;
+    if (!MAP_FILTER.includes(demo.map_name)) return;
     // Only games with bad players
     // if (!guzmerPlayers.filter(value => LOW_SKILL_PLAYERS.includes(value.steamid)).length) return;
     // if (!guzmerPlayers.find(player => player.steamid === '76561198025465711')) return; // Has Phil
@@ -174,6 +169,32 @@ const main = (): void => {
 
     // Now we are a clan match
     outData.mapsParsed += 1;
+
+    // Parse player stats
+    guzmerPlayers.forEach(p => {
+      const impact = 2.13 * p.kill_per_round + 0.42 * p.assist_per_round - 0.41;
+      let kastRounds = 0;
+      demo.rounds.forEach(round => {
+        if (
+          p.kills.some(k => k.round_number === round.number) ||
+          p.assits.some(a => a.round_number === round.number) ||
+          p.deaths.some(d => d.round_number === round.number && d.is_trade_kill) ||
+          !p.deaths.some(d => d.round_number === round.number)
+        ) {
+          kastRounds += 1;
+        }
+      });
+      const kast = (kastRounds / demo.rounds.length) * 100;
+      const hltv2 =
+        0.0073 * kast +
+        0.3591 * p.kill_per_round +
+        -0.5329 * p.death_per_round +
+        0.2372 * impact +
+        0.0032 * p.average_health_damage +
+        0.1587;
+      outData.playerStats[p.steamid].ratings.push(hltv2);
+      outData.playerStats[p.steamid].name = p.name;
+    });
 
     // Find which team Guzmer is
     const guzmerTeamName = guzmerPlayers[0].team_name;
@@ -242,7 +263,17 @@ const main = (): void => {
     outData.timeGroups[i].winrate =
       outData.timeGroups[i].wins / (outData.timeGroups[i].wins + outData.timeGroups[i].losses);
   }
-  console.log(JSON.stringify(outData, null, 2));
+  Object.keys(outData.playerStats).forEach(id => {
+    outData.playerStats[id].stddev = outData.playerStats[id].ratings.stddev();
+    outData.playerStats[id].median = outData.playerStats[id].ratings.median();
+    outData.playerStats[id].count = outData.playerStats[id].ratings.length;
+    outData.playerStats[id].ratings = (undefined as unknown) as stats.Stats;
+  });
+  // console.log(JSON.stringify(outData, null, 2));
+  outputJsonSync('_output.json', outData, {
+    spaces: 2,
+  });
+  console.log('Complete');
 };
 
 main();
