@@ -58,11 +58,11 @@ const baseTimeGroupData = {
 };
 
 const timeGroups: Record<number, typeof baseTimeGroupData> = Object.fromEntries(
-  Array.from(Array(24).keys()).map(key => [key, baseTimeGroupData])
+  Array.from(Array(24).keys()).map((key) => [key, baseTimeGroupData])
 );
 
 const playerStats = Object.fromEntries(
-  GUZMER_PLAYERS.map(id => [
+  GUZMER_PLAYERS.map((id) => [
     id,
     {
       ratings: new stats.Stats(),
@@ -140,14 +140,14 @@ const isScrimmage = (demo: DemoJson): boolean => {
 const main = (): void => {
   const dataFiles = fs
     .readdirSync(DEMOS_PATH)
-    .filter(file => file.endsWith('.json'))
+    .filter((file) => file.endsWith('.json'))
     .sort();
 
-  dataFiles.forEach(dataFile => {
+  dataFiles.forEach((dataFile) => {
     const demo: DemoJson = JSON.parse(fs.readFileSync(path.join(DEMOS_PATH, dataFile), 'utf8'));
     const { players, rounds } = demo;
 
-    const guzmerPlayers = players.filter(player => GUZMER_PLAYERS.includes(player.steamid));
+    const guzmerPlayers = players.filter((player) => GUZMER_PLAYERS.includes(player.steamid));
 
     if (new Date(demo.date) < DEMOS_AFTER) return;
     // Must have enough Guzmer players
@@ -171,15 +171,15 @@ const main = (): void => {
     outData.mapsParsed += 1;
 
     // Parse player stats
-    guzmerPlayers.forEach(p => {
+    guzmerPlayers.forEach((p) => {
       const impact = 2.13 * p.kill_per_round + 0.42 * p.assist_per_round - 0.41;
       let kastRounds = 0;
-      demo.rounds.forEach(round => {
+      demo.rounds.forEach((round) => {
         if (
-          p.kills.some(k => k.round_number === round.number) ||
-          p.assits.some(a => a.round_number === round.number) ||
-          p.deaths.some(d => d.round_number === round.number && d.is_trade_kill) ||
-          !p.deaths.some(d => d.round_number === round.number)
+          p.kills.some((k) => k.round_number === round.number) ||
+          p.assits.some((a) => a.round_number === round.number) ||
+          p.deaths.some((d) => d.round_number === round.number && d.is_trade_kill) ||
+          !p.deaths.some((d) => d.round_number === round.number)
         ) {
           kastRounds += 1;
         }
@@ -199,16 +199,16 @@ const main = (): void => {
     // Find which team Guzmer is
     const guzmerTeamName = guzmerPlayers[0].team_name;
 
-    const pistolRounds = rounds.filter(round => round.type === RoundType.PISTOL_ROUND);
-    const tSideRounds = rounds.filter(round => isTeamOnSide(Side.T, guzmerTeamName, round));
-    const ctSideRounds = rounds.filter(round => isTeamOnSide(Side.CT, guzmerTeamName, round));
+    const pistolRounds = rounds.filter((round) => round.type === RoundType.PISTOL_ROUND);
+    const tSideRounds = rounds.filter((round) => isTeamOnSide(Side.T, guzmerTeamName, round));
+    const ctSideRounds = rounds.filter((round) => isTeamOnSide(Side.CT, guzmerTeamName, round));
 
-    const pistolRoundsWon = pistolRounds.filter(round => round.winner_name === guzmerTeamName);
-    const tSideRoundsWon = tSideRounds.filter(round => round.winner_name === guzmerTeamName);
-    const ctSideRoundsWon = ctSideRounds.filter(round => round.winner_name === guzmerTeamName);
+    const pistolRoundsWon = pistolRounds.filter((round) => round.winner_name === guzmerTeamName);
+    const tSideRoundsWon = tSideRounds.filter((round) => round.winner_name === guzmerTeamName);
+    const ctSideRoundsWon = ctSideRounds.filter((round) => round.winner_name === guzmerTeamName);
 
-    const guzmerTeamPlayers = players.filter(player => player.team_name === guzmerTeamName);
-    const enemyTeamPlayers = players.filter(player => player.team_name !== guzmerTeamName);
+    const guzmerTeamPlayers = players.filter((player) => player.team_name === guzmerTeamName);
+    const enemyTeamPlayers = players.filter((player) => player.team_name !== guzmerTeamName);
 
     const guzmerTotalRank = guzmerTeamPlayers.reduce((prev, curr) => prev + curr.rank_old, 0);
     const enemyTotalRank = enemyTeamPlayers.reduce((prev, curr) => prev + curr.rank_old, 0);
@@ -263,11 +263,11 @@ const main = (): void => {
     outData.timeGroups[i].winrate =
       outData.timeGroups[i].wins / (outData.timeGroups[i].wins + outData.timeGroups[i].losses);
   }
-  Object.keys(outData.playerStats).forEach(id => {
+  Object.keys(outData.playerStats).forEach((id) => {
     outData.playerStats[id].stddev = outData.playerStats[id].ratings.stddev();
     outData.playerStats[id].median = outData.playerStats[id].ratings.median();
     outData.playerStats[id].count = outData.playerStats[id].ratings.length;
-    outData.playerStats[id].ratings = (undefined as unknown) as stats.Stats;
+    outData.playerStats[id].ratings = undefined as unknown as stats.Stats;
   });
   // console.log(JSON.stringify(outData, null, 2));
   outputJsonSync('_output.json', outData, {
