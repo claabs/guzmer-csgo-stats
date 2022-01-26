@@ -8,8 +8,10 @@
 <body>
     <div id="3d-rank-hist"></div>
     <script type="module">
-        import plotParams from "./3d-rank-hist.json" assert { type: "json" };
-        Plotly.newPlot(document.getElementById('3d-rank-hist'), ...plotParams);
+        (async () => {
+            const plotParams = await fetch('./3d-rank-hist.json').then(r => r.json());
+            Plotly.newPlot(document.getElementById('3d-rank-hist'), ...plotParams);
+        })();
     </script>
 </body>
 
