@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script src="https://cdn.plot.ly/plotly-2.8.3.min.js"></script>
+</head>
+
+<body>
+    <div id="3d-rank-hist"></div>
+    <script type="module">
+        import plotParams from "./3d-rank-hist.json" assert { type: "json" };
+        Plotly.newPlot(document.getElementById('3d-rank-hist'), ...plotParams);
+    </script>
+</body>
+
+</html>
