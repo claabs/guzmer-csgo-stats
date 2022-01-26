@@ -60,7 +60,6 @@ export const generateCharts = async (): Promise<void> => {
   let maxCount = 0;
   let maxCountWeek = 0;
   sortedWeeks.forEach(([, ranks], weekIdx) => {
-    // console.log(ranks);
     Object.entries(ranks).forEach(([rank, players]) => {
       const rankNum = parseInt(rank, 10);
       const count = players.size;
@@ -120,7 +119,7 @@ export const generateCharts = async (): Promise<void> => {
     },
   ];
 
-  outputJSONSync('site/3d-rank-hist.json', plotParams);
+  outputJSONSync('docs/3d-rank-hist.json', plotParams);
 
   plot(...plotParams);
 };
