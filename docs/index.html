@@ -3,10 +3,24 @@
 
 <head>
     <script src="https://cdn.plot.ly/plotly-2.8.3.min.js"></script>
+    <style>
+        html,
+        body {
+            height: 100%;
+            width: 100%;
+            display: flex;
+            margin: 0;
+        }
+
+        .chart {
+            height: 100%;
+            width: 100%;
+        }
+    </style>
 </head>
 
 <body>
-    <div id="3d-rank-hist"></div>
+    <div id="3d-rank-hist" class="chart"></div>
     <script type="module">
         (async () => {
             const plotParams = await fetch('./3d-rank-hist.json').then(r => r.json());

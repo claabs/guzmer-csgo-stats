@@ -96,8 +96,6 @@ export const generateCharts = async (): Promise<void> => {
       },
     ],
     {
-      width: 2500,
-      height: 1200,
       scene: {
         xaxis: {
           title: `Player's CSGO Rank`,
